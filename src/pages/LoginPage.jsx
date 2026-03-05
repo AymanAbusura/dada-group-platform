@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logoLight from "../assets/logo-light.svg";
 
 const MANAGER_NAME = import.meta.env.VITE_MANAGER_NAME;
 const MANAGER_PASS = import.meta.env.VITE_MANAGER_PASS;
@@ -27,7 +28,13 @@ export default function LoginPage({ onLogin, onBack }) {
     <div className="login-root">
       <div className="login-card">
         <div className="login-logo">
-          <div className="login-badge">DADA GROUP</div>
+          <div className="landing-logo">
+            <img 
+              src={logoLight}
+              alt="DADA GROUP Logo"
+              className="landing-logo-image"
+            />
+          </div>
           <h1 className="login-title">دخول المدير</h1>
           <p className="login-sub">لوحة تحليل السوق الشهري</p>
         </div>

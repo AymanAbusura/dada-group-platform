@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { FORM_SECTIONS } from '../utils/formData.js';
 import { submitReport } from '../utils/supabase.js';
+import logoLight from "../assets/logo-light.svg";
 
 // ── Product Card ────────────────────────────────────────────
 function ProductCard({ product, formState, onChange }) {
@@ -179,7 +180,13 @@ export default function FormPage({ onBack }) {
         <div className="topbar">
           <div className="topbar-inner">
             <div className="topbar-left">
-              <span className="topbar-badge">DADA GROUP</span>
+              <div className="landing-logo">
+                <img 
+                  src={logoLight}
+                  alt="DADA GROUP Logo"
+                  className="landing-logo-image"
+                />
+              </div>
               <div className="topbar-title"><h1>تحليل الحصة السوقية</h1></div>
             </div>
             <button className="topbar-btn" onClick={onBack}>← الرئيسية</button>
@@ -203,7 +210,13 @@ export default function FormPage({ onBack }) {
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-left">
-            <span className="topbar-badge">DADA GROUP</span>
+            <div className="landing-logo">
+              <img 
+                src={logoLight}
+                alt="DADA GROUP Logo"
+                className="landing-logo-image"
+              />
+            </div>
             <div className="topbar-title">
               <h1>📊 تحليل الحصة السوقية الشهري</h1>
               <p>لكل موديل beko / Ariston — سعر المنافس الفعلي في المحل</p>

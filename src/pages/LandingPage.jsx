@@ -1,13 +1,19 @@
+import logoLight from "../assets/logo-light.svg";
+
 export default function LandingPage({ onSelect }) {
   return (
     <div className="landing-root">
       <div className="landing-grid-bg" />
 
       <div className="landing-logo-wrap">
-        <div className="landing-logo-badge">DADA GROUP</div>
-        <h1 className="landing-title">
-          مجموعة <span>الدادا</span>
-        </h1>
+        <div className="landing-logo">
+          <img 
+            src={logoLight}
+            alt="DADA GROUP Logo"
+            className="landing-logo-image"
+          />
+        </div>
+
         <div className="landing-divider" />
         <p className="landing-subtitle">منصة تحليل الحصة السوقية — الأردن</p>
       </div>

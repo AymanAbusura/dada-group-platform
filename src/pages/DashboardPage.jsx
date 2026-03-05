@@ -11,6 +11,7 @@ import {
   BarElement, Tooltip, Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import logoLight from "../assets/logo-light.svg";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -489,7 +490,13 @@ export default function DashboardPage({ onBack }) {
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-left">
-            <span className="topbar-badge">DADA GROUP</span>
+            <div className="landing-logo">
+              <img 
+                src={logoLight}
+                alt="DADA GROUP Logo"
+                className="landing-logo-image"
+              />
+            </div>
             <div className="topbar-title">
               <h1>لوحة تحليل السوق</h1>
               <p>beko &amp; Ariston — الأردن</p>
