@@ -1098,6 +1098,14 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   transform: translateX(-4px);
 }
 
+.popup-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
 .popup-report-shop {
   font-weight: 700;
   color: var(--navy);
@@ -1114,6 +1122,56 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 10px;
+}
+
+.popup-report-detail {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.popup-detail-label {
+  min-width: 60px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  opacity: 0.7;
+}
+
+.popup-detail-value {
+  flex: 1;
+  color: var(--text);
+}
+
+.display-value {
+  color: var(--navy-mid);
+  font-weight: 600;
+}
+
+.recommendation-value {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.notes-detail {
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.notes-value {
+  font-style: italic;
+  color: var(--navy-mid);
+}
+
+.empty-value {
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.6;
+  font-size: 11px;
 }
 
 .popup-model-preview {
@@ -1611,6 +1669,20 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   }
 
   .popup-model-name {
+    min-width: auto;
+  }
+
+  .popup-report-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .popup-report-detail {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .popup-detail-label {
     min-width: auto;
   }
 }

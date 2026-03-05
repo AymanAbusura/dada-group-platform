@@ -114,7 +114,7 @@ function RepPopup({ rep, data, onClose }) {
           </div>
         </div>
 
-        <div className="popup-section">
+        {/* <div className="popup-section">
           <h3 className="popup-section-title">آخر التقارير</h3>
           <div className="popup-reports-list">
             {recentReports.length > 0 ? (
@@ -124,6 +124,79 @@ function RepPopup({ rep, data, onClose }) {
                   <div className="popup-report-area">{getField(report, 'area') || 'منطقة'}</div>
                   <div className="popup-report-date">
                     {new Date(report.created_at).toLocaleDateString('ar-JO')}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state-text">لا توجد تقارير</div>
+            )}
+          </div>
+        </div> */}
+        <div className="popup-section">
+          <h3 className="popup-section-title">آخر التقارير</h3>
+          <div className="popup-reports-list">
+            {recentReports.length > 0 ? (
+              recentReports.map((report, idx) => (
+                <div key={idx} className="popup-report-item">
+                  <div className="popup-report-header">
+                    <div className="popup-report-shop">{getField(report, 'shop_name') || 'محل'}</div>
+                    <div className="popup-report-area">{getField(report, 'area') || 'منطقة'}</div>
+                    <div className="popup-report-date">
+                      {new Date(report.created_at).toLocaleDateString('ar-JO')}
+                    </div>
+                  </div>
+                  
+                  {/* Display Field */}
+                  {/* {getField(report, 'display', 'العرض') && (
+                    <div className="popup-report-detail">
+                      <span className="popup-detail-label">العرض:</span>
+                      <span className="popup-detail-value display-value">
+                        {getField(report, 'display', 'العرض')}
+                      </span>
+                    </div>
+                  )} */}
+
+                  {/* Recommendation Field */}
+                  {/* {getField(report, 'recommendation', 'التوصية') && (
+                    <div className="popup-report-detail">
+                      <span className="popup-detail-label">التوصية:</span>
+                      <span className="popup-detail-value recommendation-value">
+                        {getField(report, 'recommendation', 'التوصية')}
+                      </span>
+                    </div>
+                  )} */}
+
+                  {/* Notes Field */}
+                  {/* {getField(report, 'notes', 'ملاحظات') && (
+                    <div className="popup-report-detail notes-detail">
+                      <span className="popup-detail-label">ملاحظات:</span>
+                      <span className="popup-detail-value notes-value">
+                        {getField(report, 'notes', 'ملاحظات')}
+                      </span>
+                    </div>
+                  )} */}
+                  {/* Display Field */}
+                  <div className="popup-report-detail">
+                    <span className="popup-detail-label">العرض:</span>
+                    <span className={`popup-detail-value ${getField(report, 'display', 'العرض') ? 'display-value' : 'empty-value'}`}>
+                      {getField(report, 'display', 'العرض') || '—'}
+                    </span>
+                  </div>
+
+                  {/* Recommendation Field */}
+                  <div className="popup-report-detail">
+                    <span className="popup-detail-label">التوصية:</span>
+                    <span className={`popup-detail-value ${getField(report, 'recommendation', 'التوصية') ? 'recommendation-value' : 'empty-value'}`}>
+                      {getField(report, 'recommendation', 'التوصية') || '—'}
+                    </span>
+                  </div>
+
+                  {/* Notes Field */}
+                  <div className="popup-report-detail notes-detail">
+                    <span className="popup-detail-label">ملاحظات:</span>
+                    <span className={`popup-detail-value ${getField(report, 'notes', 'ملاحظات') ? 'notes-value' : 'empty-value'}`}>
+                      {getField(report, 'notes', 'ملاحظات') || '—'}
+                    </span>
                   </div>
                 </div>
               ))
