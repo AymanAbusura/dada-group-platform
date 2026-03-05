@@ -4,6 +4,7 @@ import {
   computeKPIs, buildCompFreq, buildAvailList,
   buildAreaCounts, buildRepCounts, buildPriceTableEntries,
   getModelDetail, getModelCols, getUnique,
+  getField, isYes
 } from '../utils/dataUtils.js';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -17,8 +18,163 @@ const PALETTE = ['#1a3a5c','#c9a84c','#c0291c','#27ae60','#2980b9','#8e44ad','#e
 
 function pctColor(p) { return p >= 60 ? 'var(--green)' : p >= 30 ? 'var(--gold)' : 'var(--red)'; }
 
-// ── Sub-components ──────────────────────────────────────────
+function RepPopup({ rep, data, onClose }) {
+  const repData = data.filter(r => {
+    const repName = getField(r, 'rep_name') || '';
+    return repName === rep;
+  });
 
+  const totalShops = new Set(repData.map(r => getField(r, 'shop_name'))).size;
+  const totalReports = repData.length;
+  const modelCols = getModelCols(repData);
+  
+  let totalAvail = 0, availCount = 0;
+  modelCols.forEach(col => {
+    repData.forEach(r => {
+      const v = r[col] || '';
+      if (v) {
+        availCount++;
+        if (isYes(v)) totalAvail++;
+      }
+    });
+  });
+  const availPct = availCount > 0 ? Math.round((totalAvail / availCount) * 100) : 0;
+
+  const areas = new Set(repData.map(r => getField(r, 'area') || 'غير محدد'));
+
+  const recentReports = [...repData]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (e.target.classList.contains('popup-overlay')) {
+        onClose();
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  return (
+    <div className="popup-overlay">
+      <div className="popup-content">
+        <button className="popup-close-svg" onClick={onClose}>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+        
+        <div className="popup-header">
+          <div className="popup-avatar-large">{rep ? rep.charAt(0) : '?'}</div>
+          <div className="popup-title-section">
+            <h2 className="popup-title">{rep}</h2>
+            <div className="popup-subtitle">مندوب مبيعات</div>
+          </div>
+        </div>
+
+        <div className="popup-stats-grid">
+          <div className="popup-stat-card">
+            <div className="popup-stat-value">{totalReports}</div>
+            <div className="popup-stat-label">إجمالي التقارير</div>
+          </div>
+          <div className="popup-stat-card">
+            <div className="popup-stat-value">{totalShops}</div>
+            <div className="popup-stat-label">محل تمت زيارته</div>
+          </div>
+          <div className="popup-stat-card">
+            <div className="popup-stat-value" style={{ color: pctColor(availPct) }}>
+              {availPct}%
+            </div>
+            <div className="popup-stat-label">متوسط التوافر</div>
+          </div>
+          <div className="popup-stat-card">
+            <div className="popup-stat-value">{areas.size}</div>
+            <div className="popup-stat-label">منطقة</div>
+          </div>
+        </div>
+
+        <div className="popup-section">
+          <h3 className="popup-section-title">المناطق التي زارها</h3>
+          <div className="popup-areas">
+            {[...areas].map(area => (
+              <span key={area} className="popup-area-tag">{area}</span>
+            ))}
+            {areas.size === 0 && (
+              <span className="popup-area-tag">لا توجد مناطق</span>
+            )}
+          </div>
+        </div>
+
+        <div className="popup-section">
+          <h3 className="popup-section-title">آخر التقارير</h3>
+          <div className="popup-reports-list">
+            {recentReports.length > 0 ? (
+              recentReports.map((report, idx) => (
+                <div key={idx} className="popup-report-item">
+                  <div className="popup-report-shop">{getField(report, 'shop_name') || 'محل'}</div>
+                  <div className="popup-report-area">{getField(report, 'area') || 'منطقة'}</div>
+                  <div className="popup-report-date">
+                    {new Date(report.created_at).toLocaleDateString('ar-JO')}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state-text">لا توجد تقارير</div>
+            )}
+          </div>
+        </div>
+
+        {repData.length > 0 && (
+          <div className="popup-section">
+            <h3 className="popup-section-title">أداء الموديلات</h3>
+            <div className="popup-model-preview">
+              {modelCols.slice(0, 5).map(col => {
+                const modelName = col.replace('_exists', '');
+                let yes = 0, total = 0;
+                repData.forEach(r => {
+                  const v = r[col] || '';
+                  if (v) {
+                    total++;
+                    if (isYes(v)) yes++;
+                  }
+                });
+                const pct = total > 0 ? Math.round((yes / total) * 100) : 0;
+                return (
+                  <div key={col} className="popup-model-row">
+                    <span className="popup-model-name">{modelName}</span>
+                    <div className="popup-model-meter">
+                      <div className="popup-model-bar-track">
+                        <div 
+                          className="popup-model-bar-fill" 
+                          style={{ width: `${pct}%`, background: pctColor(pct) }}
+                        />
+                      </div>
+                      <span className="popup-model-pct">{pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {modelCols.length > 5 && (
+                <div className="popup-more-models">+{modelCols.length - 5} موديلات أخرى</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────
 function KPICard({ icon, value, label, variant, delay }) {
   return (
     <div className={`kpi-card kpi-${variant}`} style={{ animationDelay: `${delay}ms` }}>
@@ -120,12 +276,17 @@ function AreaGrid({ items }) {
   );
 }
 
-function RepList({ items }) {
+function RepList({ items, data, onRepClick }) {
   if (!items.length) return <EmptyState text="لا توجد بيانات" />;
+  
   return (
     <div>
       {items.map(([rep, count]) => (
-        <div key={rep} className="rep-row">
+        <div 
+          key={rep} 
+          className="rep-row clickable"
+          onClick={() => onRepClick(rep)}
+        >
           <div className="rep-avatar">{rep.charAt(0)}</div>
           <div className="rep-info">
             <div className="rep-name">{rep}</div>
@@ -202,7 +363,6 @@ function CardSection({ icon, title, subtitle, children, style }) {
 }
 
 // ── Main Dashboard ──────────────────────────────────────────
-
 export default function DashboardPage({ onBack }) {
   const [rawData, setRawData]   = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -210,6 +370,7 @@ export default function DashboardPage({ onBack }) {
   const [error, setError]       = useState(null);
   const [filters, setFilters]   = useState({ month: '', area: '', rep: '' });
   const [selModel, setSelModel] = useState('');
+  const [selectedRep, setSelectedRep] = useState(null);
 
   const load = useCallback(async (showSpin = false) => {
     if (showSpin) setSpinning(true);
@@ -252,7 +413,6 @@ export default function DashboardPage({ onBack }) {
 
   return (
     <div>
-      {/* Topbar */}
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-left">
@@ -284,7 +444,6 @@ export default function DashboardPage({ onBack }) {
         </div>
       </div>
 
-      {/* Filters */}
       {!loading && !error && (
         <div className="filters-bar">
           {[
@@ -342,7 +501,6 @@ export default function DashboardPage({ onBack }) {
 
         {!loading && !error && filtered.length > 0 && (
           <>
-            {/* KPIs */}
             <div className="kpi-row">
               <KPICard icon="🏪" value={kpis.shops}           label="محل تمت زيارته"        variant="navy"  delay={0}   />
               <KPICard icon="📦" value={kpis.models || '—'}   label="موديل تم رصده"         variant="gold"  delay={60}  />
@@ -351,7 +509,6 @@ export default function DashboardPage({ onBack }) {
               <KPICard icon="👥" value={kpis.reps}            label="مندوب نشط"             variant="navy"  delay={240} />
             </div>
 
-            {/* Charts row */}
             <div className="grid-2">
               <CardSection icon="🏆" title="أكثر المنافسين تواجداً في المحلات" subtitle="مرتب حسب عدد الرصدات">
                 <CompChart freq={compFreq} />
@@ -361,7 +518,6 @@ export default function DashboardPage({ onBack }) {
               </CardSection>
             </div>
 
-            {/* Price Table */}
             <div className="card card-full">
               <div className="card-header">
                 <div className="card-header-icon">💰</div>
@@ -384,17 +540,19 @@ export default function DashboardPage({ onBack }) {
               </div>
             </div>
 
-            {/* Area + Rep */}
             <div className="grid-2">
               <CardSection icon="📍" title="الزيارات حسب المنطقة">
                 <AreaGrid items={areaCounts} />
               </CardSection>
               <CardSection icon="👤" title="أداء المندوبين">
-                <RepList items={repCounts} />
+                <RepList 
+                  items={repCounts} 
+                  data={filtered}
+                  onRepClick={(rep) => setSelectedRep(rep)}
+                />
               </CardSection>
             </div>
 
-            {/* Model Detail */}
             <div className="card card-full">
               <div className="card-header">
                 <div className="card-header-icon">🔍</div>
@@ -419,7 +577,6 @@ export default function DashboardPage({ onBack }) {
           </>
         )}
 
-        {/* Edge case: filters result in 0 but rawData has records */}
         {!loading && !error && rawData.length > 0 && filtered.length === 0 && (
           <div className="empty-full">
             <div className="empty-full-icon">🔍</div>
@@ -428,6 +585,14 @@ export default function DashboardPage({ onBack }) {
           </div>
         )}
       </div>
+
+      {selectedRep && (
+        <RepPopup
+          rep={selectedRep}
+          data={filtered}
+          onClose={() => setSelectedRep(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// Auto-generated from dada_market_form_v3.html
 export const FORM_SECTIONS = [
   {
     icon: '🧊',

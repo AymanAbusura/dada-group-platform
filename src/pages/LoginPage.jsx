@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// Constant credentials — no backend needed
 const MANAGER_NAME = import.meta.env.VITE_MANAGER_NAME;
 const MANAGER_PASS = import.meta.env.VITE_MANAGER_PASS;
 
@@ -14,7 +13,6 @@ export default function LoginPage({ onLogin, onBack }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    // Simulate a tiny delay for UX
     setTimeout(() => {
       if (name.trim().toLowerCase() === MANAGER_NAME && pass === MANAGER_PASS) {
         onLogin();
