@@ -47,7 +47,9 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 @keyframes goldPulse{ 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); } 50% { box-shadow: 0 0 0 8px rgba(201,168,76,0); } }
 @keyframes slideIn  { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
 
-/* ══════════════════ LANDING PAGE ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   LANDING PAGE
+   ════════════════════════════════════════════════════════════ */
 .landing-root {
   min-height: 100vh;
   background: var(--navy);
@@ -193,7 +195,9 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   animation-fill-mode: forwards;
 }
 
-/* ══════════════════ LOGIN PAGE ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   LOGIN PAGE
+   ════════════════════════════════════════════════════════════ */
 .login-root {
   min-height: 100vh;
   background: var(--navy);
@@ -343,7 +347,9 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 
 .login-back button:hover { color: var(--gold); }
 
-/* ══════════════════ SHARED TOPBAR (for form + dashboard) ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   SHARED TOPBAR (for form + dashboard)
+   ════════════════════════════════════════════════════════════ */
 .topbar {
   background: linear-gradient(135deg, var(--navy) 0%, #0f2340 100%);
   padding: 0;
@@ -424,7 +430,9 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   width: 0%;
 }
 
-/* ══════════════════ DASHBOARD ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   DASHBOARD
+   ════════════════════════════════════════════════════════════ */
 .filters-bar {
   background: var(--white);
   padding: 12px 24px;
@@ -635,7 +643,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 .avail-model { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .avail-brand { font-size: 10px; color: var(--muted); margin-top: 1px; }
 
-.avail-meter { display: flex; align-items: center; gap: 8px; }
+.avail-meter { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .avail-bar-track { width: 80px; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .avail-bar-fill  { height: 100%; border-radius: 4px; transition: var(--transition); }
 .avail-pct { font-size: 12px; font-weight: 900; width: 36px; text-align: left; }
@@ -695,6 +703,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 .count-bar-wrap { display: flex; align-items: center; gap: 8px; }
 .count-bar { height: 6px; background: var(--navy-mid); border-radius: 3px; min-width: 4px; }
 
+/* Area grid */
 .area-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -792,6 +801,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 .price-tag.tag-green .pt-val { color: var(--green); }
 .price-tag.tag-red   .pt-val { color: var(--red); }
 
+/* ── FIX: model-select — fluid width, no forced overflow ── */
 .model-select {
   padding: 10px 14px;
   border: 1.5px solid var(--border);
@@ -799,7 +809,8 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   font-size: 13px;
   background: var(--light-bg);
   outline: none;
-  min-width: 200px;
+  width: 100%;
+  max-width: 400px;
   color: var(--text);
   transition: var(--transition);
 }
@@ -1131,11 +1142,13 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 }
 
 .notes-detail {
+  padding: 6px 8px;
   border-radius: 4px;
   margin-top: 8px;
 }
 
 .notes-value {
+  font-style: italic;
   color: var(--navy-mid);
 }
 
@@ -1217,7 +1230,9 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   padding-left: 8px;
 }
 
-/* ══════════════════ FORM PAGE ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   FORM PAGE
+   ════════════════════════════════════════════════════════════ */
 .form-info-bar {
   background: var(--white);
   padding: 12px 20px;
@@ -1265,6 +1280,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   padding: 20px 16px 80px;
 }
 
+/* Section */
 .form-section {
   background: var(--white);
   border-radius: var(--radius-md);
@@ -1580,28 +1596,65 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 
 .btn-reset:hover { background: var(--navy); }
 
-/* ══════════════════ RESPONSIVE ══════════════════ */
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — tablet (≤900px)
+   ════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr; }
   .grid-3 { grid-template-columns: 1fr; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — mobile (≤768px)
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Stack grids with tighter gap */
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* Shrink chart so it fits comfortably in single-column layout */
+  .chart-container {
+    height: 200px;
+  }
+
+  /* Narrow the availability bar so model name + bar + % all fit in one row */
+  .avail-bar-track {
+    width: 60px;
+  }
+
+  /* model-select: already fluid via width:100%, ensure no overflow */
+  .model-select {
+    max-width: 100%;
+  }
+
+  /* Reduce dashboard body padding on narrow screens */
+  .dashboard-body {
+    padding: 16px 12px 60px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — small mobile (≤640px)
+   ════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
-  .topbar-inner { 
-    padding: 12px 16px; 
-    flex-direction: column;
-  }
-  .topbar-left {
-    flex-direction: column;
-  }
+  .topbar-right .topbar-meta-item { display: none; }
+  .topbar-inner { padding: 12px 16px; }
   .dashboard-body { padding: 16px 12px 60px; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .card { padding: 16px; min-width: 100px; }
+  .card { padding: 16px; }
   .landing-cards { gap: 16px; }
   .role-card { width: 100%; max-width: 340px; padding: 32px 24px; }
   .login-card { padding: 36px 24px; }
   .notes-grid { grid-template-columns: 1fr; }
-  .model-select { width: 100%; }
+
+  /* model-select: full width on small screens, no override needed */
+  .model-select {
+    max-width: 100%;
+  }
+
   .popup-content {
     padding: 24px 16px;
     width: 95%;
@@ -1635,6 +1688,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   }
 
   .popup-model-row {
+    flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
@@ -1647,7 +1701,12 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
     flex-wrap: wrap;
     gap: 6px;
   }
-  
+
+  .popup-report-detail {
+    flex-direction: column;
+    gap: 2px;
+  }
+
   .popup-detail-label {
     min-width: auto;
   }
