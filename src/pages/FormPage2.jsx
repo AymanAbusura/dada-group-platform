@@ -1,21 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { FORM_SECTIONS } from '../utils/formData.js';
 import { submitReport } from '../utils/supabase.js';
 import logoLight from "../assets/logo-light.svg";
 
-function Toast({ message, onDone }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000);
-    return () => clearTimeout(t);
-  }, []);
-  return (
-    <div className="wiz-toast">
-      <span className="wiz-toast-icon">⚠️</span>
-      <span>{message}</span>
-    </div>
-  );
-}
-
+// ── Product Card ────────────────────────────────────────────
 function ProductCard({ product, formState, onChange }) {
   const { brand, model, existsName, competitors } = product;
   const existsVal = formState[existsName] || 'no';
@@ -88,31 +76,22 @@ function ProductCard({ product, formState, onChange }) {
   );
 }
 
+// ── Main FormPage ───────────────────────────────────────────
 const NOTES_STEP = FORM_SECTIONS.length + 1;
 
 export default function FormPage({ onBack }) {
-  const [step, setStep]           = useState(0);
-  const [meta, setMeta]           = useState({ rep_name: '', month: '', shop_name: '', area: '' });
+  const [step, setStep]         = useState(0);
+  const [meta, setMeta]         = useState({ rep_name: '', month: '', shop_name: '', area: '' });
   const [formState, setFormState] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast]         = useState('');
   const topRef = useRef(null);
 
   function scrollTop() { topRef.current?.scrollIntoView({ behavior: 'smooth' }); }
 
-  const metaFilled = meta.rep_name.trim() && meta.month && meta.shop_name.trim() && meta.area;
-
-  function showToast(msg) { setToast(msg); }
-
   function goNext() {
-    if (step === 0 && !metaFilled) {
-      const missing = [];
-      if (!meta.rep_name.trim()) missing.push('اسم المندوب');
-      if (!meta.month)           missing.push('الشهر');
-      if (!meta.shop_name.trim()) missing.push('اسم المحل');
-      if (!meta.area)            missing.push('المنطقة');
-      showToast(`يرجى تعبئة: ${missing.join('، ')}`);
+    if (step === 0 && (!meta.rep_name || !meta.month || !meta.shop_name || !meta.area)) {
+      alert('يرجى تعبئة جميع الحقول الأساسية: اسم المندوب، الشهر، اسم المحل، المنطقة');
       return;
     }
     setStep(s => Math.min(s + 1, NOTES_STEP));
@@ -121,17 +100,8 @@ export default function FormPage({ onBack }) {
 
   function goPrev() { setStep(s => Math.max(s - 1, 0)); scrollTop(); }
 
-  function goToStep(target) {
-    if (step === 0 && target > 0 && !metaFilled) {
-      const missing = [];
-      if (!meta.rep_name.trim()) missing.push('اسم المندوب');
-      if (!meta.month)           missing.push('الشهر');
-      if (!meta.shop_name.trim()) missing.push('اسم المحل');
-      if (!meta.area)            missing.push('المنطقة');
-      showToast(`يرجى تعبئة: ${missing.join('، ')}`);
-      return;
-    }
-    if (target <= step + 1) { setStep(target); scrollTop(); }
+  function goToStep(s) {
+    if (s <= step + 1) { setStep(s); scrollTop(); }
   }
 
   async function handleSubmit() {
@@ -186,7 +156,7 @@ export default function FormPage({ onBack }) {
 
   return (
     <div ref={topRef}>
-      {toast && <Toast message={toast} onDone={() => setToast('')} />}
+      {/* Topbar */}
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-left">
@@ -203,19 +173,18 @@ export default function FormPage({ onBack }) {
         </div>
       </div>
 
+      {/* Wizard tab bar */}
       <div className="wizard-nav">
         <div className="wizard-nav-inner">
-          <button
-            className={`wiz-tab${step === 0 ? ' active' : ''}${step > 0 && metaFilled ? ' done' : ''}${step > 0 && !metaFilled ? ' tab-error' : ''}`}
-            onClick={() => goToStep(0)}>
-            <span className="wiz-tab-icon">{step > 0 && metaFilled ? '✅' : step > 0 && !metaFilled ? '⚠️' : '📋'}</span>
+          <button className={`wiz-tab${step === 0 ? ' active' : ''}${step > 0 ? ' done' : ''}`} onClick={() => goToStep(0)}>
+            <span className="wiz-tab-icon">{step > 0 ? '✅' : '📋'}</span>
             <span className="wiz-tab-label">البيانات</span>
           </button>
           {FORM_SECTIONS.map((sec, i) => {
             const sIdx = i + 1;
             const isDone = step > sIdx;
             const isActive = step === sIdx;
-            const isLocked = !metaFilled || sIdx > step + 1;
+            const isLocked = sIdx > step + 1;
             return (
               <button key={i}
                 className={`wiz-tab${isActive ? ' active' : ''}${isDone ? ' done' : ''}${isLocked ? ' locked' : ''}`}
@@ -227,15 +196,18 @@ export default function FormPage({ onBack }) {
             );
           })}
           <button
-            className={`wiz-tab${step === NOTES_STEP ? ' active' : ''}${!metaFilled || step < NOTES_STEP ? ' locked' : ''}`}
-            onClick={() => goToStep(NOTES_STEP)} disabled={!metaFilled || step < NOTES_STEP}>
+            className={`wiz-tab${step === NOTES_STEP ? ' active' : ''}${step < NOTES_STEP ? ' locked' : ''}`}
+            onClick={() => goToStep(NOTES_STEP)} disabled={step < NOTES_STEP}>
             <span className="wiz-tab-icon">📝</span>
             <span className="wiz-tab-label">الإرسال</span>
           </button>
         </div>
       </div>
 
+      {/* Step body */}
       <div className="form-body" style={{ paddingBottom: 100 }}>
+
+        {/* STEP 0 — meta */}
         {step === 0 && (
           <div className="wizard-step-card">
             <div className="wizard-step-header">
@@ -247,16 +219,13 @@ export default function FormPage({ onBack }) {
             </div>
             <div className="wizard-meta-grid">
               <div className="form-info-field" style={{ minWidth: 0 }}>
-                <label>👤 اسم المندوب <span className="req-star">*</span></label>
-                <input type="text" placeholder="اكتب اسمك" value={meta.rep_name} required
-                  className={!meta.rep_name.trim() ? 'input-empty' : ''}
+                <label>👤 اسم المندوب *</label>
+                <input type="text" placeholder="اكتب اسمك" value={meta.rep_name}
                   onChange={e => setMeta(s => ({ ...s, rep_name: e.target.value }))} />
               </div>
               <div className="form-info-field" style={{ minWidth: 0 }}>
-                <label>📅 الشهر <span className="req-star">*</span></label>
-                <select value={meta.month} required
-                  className={!meta.month ? 'input-empty' : ''}
-                  onChange={e => setMeta(s => ({ ...s, month: e.target.value }))}>
+                <label>📅 الشهر *</label>
+                <select value={meta.month} onChange={e => setMeta(s => ({ ...s, month: e.target.value }))}>
                   <option value="">-- الشهر --</option>
                   {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map(m => (
                     <option key={m} value={m}>{m}</option>
@@ -264,16 +233,13 @@ export default function FormPage({ onBack }) {
                 </select>
               </div>
               <div className="form-info-field" style={{ minWidth: 0 }}>
-                <label>🏪 اسم المحل <span className="req-star">*</span></label>
-                <input type="text" placeholder="اسم المحل" value={meta.shop_name} required
-                  className={!meta.shop_name.trim() ? 'input-empty' : ''}
+                <label>🏪 اسم المحل *</label>
+                <input type="text" placeholder="اسم المحل" value={meta.shop_name}
                   onChange={e => setMeta(s => ({ ...s, shop_name: e.target.value }))} />
               </div>
               <div className="form-info-field" style={{ minWidth: 0 }}>
-                <label>📍 المنطقة <span className="req-star">*</span></label>
-                <select value={meta.area} required
-                  className={!meta.area ? 'input-empty' : ''}
-                  onChange={e => setMeta(s => ({ ...s, area: e.target.value }))}>
+                <label>📍 المنطقة *</label>
+                <select value={meta.area} onChange={e => setMeta(s => ({ ...s, area: e.target.value }))}>
                   <option value="">-- المنطقة --</option>
                   {['عمان','اربد','الزرقاء','السلط','مادبا','جرش','عجلون','المفرق','الرمثا','الكرك','الطفيلة','معان','غور الأردن'].map(a => (
                     <option key={a} value={a}>{a}</option>
@@ -284,6 +250,7 @@ export default function FormPage({ onBack }) {
           </div>
         )}
 
+        {/* SECTION STEPS */}
         {step >= 1 && step <= FORM_SECTIONS.length && (() => {
           const sec = FORM_SECTIONS[step - 1];
           return (
@@ -308,6 +275,7 @@ export default function FormPage({ onBack }) {
           );
         })()}
 
+        {/* NOTES & SUBMIT */}
         {step === NOTES_STEP && (
           <div>
             <div className="wizard-summary-bar">
@@ -353,6 +321,7 @@ export default function FormPage({ onBack }) {
           </div>
         )}
 
+        {/* Nav buttons */}
         <div className="wizard-nav-btns">
           {step > 0 && (
             <button className="wiz-btn-prev" onClick={goPrev}>→ السابق</button>
@@ -365,6 +334,7 @@ export default function FormPage({ onBack }) {
             </button>
           )}
         </div>
+
       </div>
     </div>
   );
