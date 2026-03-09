@@ -2236,6 +2236,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 	padding: 9px 12px;
 	font-size: 12px;
 	border-bottom: 1px solid rgba(255, 255, 255, .04);
+  color: rgb(142, 164, 192);
 }
 .miss-table tr:hover td {
 	background: rgba(255, 255, 255, .03);
@@ -2577,6 +2578,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 .mc-model {
 	font-size: 12px;
 	font-weight: 600;
+  color: #8ea4c0;
 }
 .mc-prices {
 	display: flex;
@@ -2735,5 +2737,5 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 	font-size: 11px;
 	margin: 2px;
 	background: rgba(255, 255, 255, .07);
-	color: #fff;
+	color: rgb(142, 164, 192);
 }
