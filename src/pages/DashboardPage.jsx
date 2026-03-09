@@ -852,7 +852,7 @@ export default function DashboardPage({ onBack }) {
         {loading && (
           <div className="db-center">
             <div className="db-spinner" />
-            <div className="db-loading-text">جاري تحميل البيانات من Supabase...</div>
+            <div className="db-loading-text">جاري تحميل البيانات</div>
           </div>
         )}
         {error && (
