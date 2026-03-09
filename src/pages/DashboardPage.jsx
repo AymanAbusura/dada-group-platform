@@ -9,14 +9,14 @@ import {
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
   BarElement, Tooltip, Legend, ArcElement,
-  PointElement, LineElement
+  PointElement, LineElement, Filler
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import logoLight from "../assets/logo-light.svg";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Tooltip, Legend,
-  ArcElement, PointElement, LineElement
+  ArcElement, PointElement, LineElement, Filler
 );
 
 const C = {
