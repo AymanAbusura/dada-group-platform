@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchReports, flattenRecord } from '../utils/supabase.js';
+import { FORM_SECTIONS } from '../utils/formData.js';
+
+const CATEGORY_MAP = FORM_SECTIONS.map((sec, i) => ({ id: `cat${i}`, label: sec.icon + ' ' + sec.title }));
 import {
   computeKPIs, buildCompFreq, buildAvailList,
   buildAreaCounts, buildRepCounts, buildPriceTableEntries,
   getModelDetail, getModelCols, getUnique,
-  getField, isYes
+  getField, isYes, buildCompPrices
 } from '../utils/dataUtils.js';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -87,28 +90,14 @@ function buildMarketShareData(data) {
 
 function buildMissingShops(data, existsCol) {
   if (!existsCol) return [];
-
-  // Group all records by shop
-  const shopMap = {};
-  data.forEach(r => {
-    const shop = getField(r, 'shop_name');
-    if (!shop) return;
-    if (!shopMap[shop]) {
-      shopMap[shop] = {
-        shop,
-        area: getField(r, 'area') || '—',
-        rep: getField(r, 'rep_name') || '—',
-        hasYes: false,
-        hasNo: false,
-      };
-    }
+  return data.filter(r => {
     const v = r[existsCol] || '';
-    if (isYes(v)) shopMap[shop].hasYes = true;
-    else if (v) shopMap[shop].hasNo = true;
-  });
-
-  // A shop is "missing" if it was visited but product was never confirmed as available
-  return Object.values(shopMap).filter(s => !s.hasYes);
+    return v && !isYes(v);
+  }).map(r => ({
+    shop: getField(r, 'shop_name') || '—',
+    area: getField(r, 'area') || '—',
+    rep: getField(r, 'rep_name') || '—',
+  }));
 }
 
 function buildNotesList(data) {
@@ -122,9 +111,46 @@ function buildNotesList(data) {
   }));
 }
 
-// ── OVERVIEW ──────────────────────────────────────────────
+function buildCatCompLabels() {
+  const map = {};
+  FORM_SECTIONS.forEach((section, i) => {
+    const catId = `cat${i}`;
+    const labels = new Set();
+    section.products.forEach(product => {
+      product.competitors.forEach(comp => {
+        const cleanModel = comp.model.trim().replace(/\s+/g, ' ');
+        labels.add(`${comp.brand} ${cleanModel}_price`);
+      });
+    });
+    map[catId] = labels;
+  });
+  return map;
+}
+
+const CAT_COMP_LABELS = buildCatCompLabels();
+
+function buildCompFreqByCat(data, catId) {
+  const freq = {};
+  const allowedLabels = catId ? CAT_COMP_LABELS[catId] : null;
+
+  data.forEach(r => {
+    Object.keys(r).forEach(k => {
+      if (!/_price\d*$/.test(k)) return;
+      const baseKey = k.replace(/_price\d+$/, '_price');
+      if (allowedLabels && !allowedLabels.has(baseKey)) return;
+      const v = parseFloat(r[k]);
+      if (!isNaN(v) && v > 0) {
+        const label = k.replace(/_price\d*$/, '');
+        freq[label] = (freq[label] || 0) + 1;
+      }
+    });
+  });
+  return freq;
+}
+
 function OverviewSection({ data, kpis }) {
-  const compFreq = useMemo(() => buildCompFreq(data), [data]);
+  const [selCat, setSelCat] = useState('');
+  const compFreq = useMemo(() => buildCompFreqByCat(data, selCat), [data, selCat]);
   const availList = useMemo(() => buildAvailList(data), [data]);
   const topComps = Object.entries(compFreq).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxComp = topComps[0]?.[1] || 1;
@@ -192,11 +218,24 @@ function OverviewSection({ data, kpis }) {
             <div className="db-card-icon">🏆</div>
             <div>
               <div className="db-card-title">أبرز المنافسين في السوق</div>
-              <div className="db-card-sub">الأكثر حضوراً في المحلات المزارة</div>
+              <div className="db-card-sub">{selCat ? `نسبة الحضور في فئة: ${CATEGORY_MAP.find(c => c.id === selCat)?.label}` : 'الأكثر حضوراً في المحلات المزارة'}</div>
             </div>
           </div>
           <div className="db-card-body">
-            {topComps.map(([comp, count], i) => (
+            <select
+              className="model-sel"
+              value={selCat}
+              onChange={e => setSelCat(e.target.value)}
+              style={{ marginBottom: 12 }}
+            >
+              <option value="">🗂️ جميع الفئات</option>
+              {CATEGORY_MAP.map(c => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+            </select>
+            {topComps.length === 0
+              ? <EmptyState text="لا توجد بيانات منافسين لهذه الفئة" />
+              : topComps.map(([comp, count], i) => (
               <div key={comp} className="comp-row">
                 <div className="comp-rank">{i + 1}</div>
                 <div className="comp-name">{comp.split(' ').slice(0, 2).join(' ')}</div>
@@ -215,7 +254,6 @@ function OverviewSection({ data, kpis }) {
   );
 }
 
-// ── AVAILABILITY ──────────────────────────────────────────
 function AvailSection({ data }) {
   const [selModel, setSelModel] = useState('');
   const availList = useMemo(() => buildAvailList(data), [data]);
@@ -304,7 +342,7 @@ function AvailSection({ data }) {
                 ? <div style={{ padding: 20, textAlign: 'center', color: C.green }}>✅ المنتج متوفر في جميع المحلات المزارة</div>
                 : (
                   <table className="miss-table">
-                    <thead><tr><th>#</th><th>اسم المعرض</th><th>المنطقة</th><th>المندوب</th><th>الحالة</th><th>الفرصة</th></tr></thead>
+                    <thead><tr><th>#</th><th>اسم المعرض</th><th>المنطقة</th><th>المندوب</th><th>الفرصة</th></tr></thead>
                     <tbody>
                       {missingShops.map((s, i) => (
                         <tr key={i}>
@@ -312,12 +350,6 @@ function AvailSection({ data }) {
                           <td style={{ fontWeight: 600 }}>{s.shop}</td>
                           <td style={{ color: C.muted }}>{s.area}</td>
                           <td>{s.rep}</td>
-                          <td>
-                            {s.hasNo
-                              ? <span style={{ color: C.red, fontSize: 11, fontWeight: 700 }}>❌ غير متوفر</span>
-                              : <span style={{ color: C.muted, fontSize: 11 }}>⬜ لم يُرصد</span>
-                            }
-                          </td>
                           <td><span className="opp-badge">🎯 فرصة بيع</span></td>
                         </tr>
                       ))}
@@ -332,7 +364,6 @@ function AvailSection({ data }) {
   );
 }
 
-// ── PRICES ────────────────────────────────────────────────
 function PricesSection({ data }) {
   const [selModel, setSelModel] = useState('');
   const priceEntries = useMemo(() => buildPriceTableEntries(data), [data]);
@@ -468,7 +499,6 @@ function PricesSection({ data }) {
   );
 }
 
-// ── MARKET SHARE ──────────────────────────────────────────
 function MarketSection({ data }) {
   const compFreq = useMemo(() => buildCompFreq(data), [data]);
   const marketShare = useMemo(() => buildMarketShareData(data), [data]);
@@ -594,7 +624,6 @@ function MarketSection({ data }) {
   );
 }
 
-// ── STAFF ─────────────────────────────────────────────────
 function StaffSection({ data }) {
   const [selectedRep, setSelectedRep] = useState(null);
   const repCounts = useMemo(() => buildRepCounts(data), [data]);
@@ -738,7 +767,6 @@ function StaffSection({ data }) {
   );
 }
 
-// ── NOTES ─────────────────────────────────────────────────
 function NotesSection({ data }) {
   const notes = useMemo(() => buildNotesList(data), [data]);
   if (!notes.length) return <EmptyState text="لا توجد ملاحظات مسجّلة من المندوبين" />;
@@ -770,7 +798,6 @@ function NotesSection({ data }) {
   );
 }
 
-// ── MAIN ──────────────────────────────────────────────────
 export default function DashboardPage({ onBack }) {
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
