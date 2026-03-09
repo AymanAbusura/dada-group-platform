@@ -373,7 +373,7 @@ function PricesSection({ data }) {
                 <tr key={e.label}>
                   <td><span className={`rank-n${i===0?' rank-1':i===1?' rank-2':i===2?' rank-3':''}`}>{i + 1}</span></td>
                   <td><BrandPill brand={e.brand} /></td>
-                  <td style={{ fontSize: 11, maxWidth: 200 }}>{e.model}</td>
+                  <td style={{ fontSize: 11, maxWidth: 200, color: '#fff' }}>{e.model}</td>
                   <td className="p-avg">{e.avg} JD</td>
                   <td className="p-min">{e.min} JD</td>
                   <td className="p-max">{e.max} JD</td>

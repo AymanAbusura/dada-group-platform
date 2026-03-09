@@ -21,6 +21,7 @@ export default function App() {
     <>
       {screen === 'landing'   && <LandingPage   onSelect={handleRoleSelect} />}
       {screen === 'login'     && <LoginPage      onLogin={handleLogin} onBack={goHome} />}
+      {/* {screen === 'login'     && <DashboardPage  onBack={goHome} />} */}
       {screen === 'dashboard' && <DashboardPage  onBack={goHome} />}
       {screen === 'form'      && <FormPage        onBack={goHome} />}
     </>
