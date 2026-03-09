@@ -58,18 +58,12 @@ export function computeKPIs(data) {
   const reps      = new Set(data.map(r => getField(r, 'rep_name')));
   const modelCols = getModelCols(data);
 
-  // Use unique shops as denominator per model col (same logic as buildAvailList)
-  const allShops = new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean));
-  const shopDenom = allShops.size || data.length;
   let yes = 0, total = 0;
   modelCols.forEach(col => {
-    const yesShops = new Set();
     data.forEach(r => {
-      const shop = getField(r, 'shop_name');
-      if (shop && isYes(r[col])) yesShops.add(shop);
+      const v = r[col] || '';
+      if (v) { total++; if (isYes(v)) yes++; }
     });
-    yes += yesShops.size;
-    total += shopDenom;
   });
 
   const compFreq = buildCompFreq(data);
@@ -113,25 +107,19 @@ export function buildCompPrices(data) {
 }
 
 export function buildAvailList(data) {
-  // Denominator = total unique shops visited (the real market universe)
-  const allShops = new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean));
-  const denom = allShops.size || data.length;
-
   return getModelCols(data).map(col => {
     const full  = col.replace('_exists', '');
     const parts = full.split(' ');
     const brand = parts[0];
     const label = parts.slice(1).join(' ') || full;
 
-    // Count unique shops where this product was explicitly confirmed present
-    const yesShops = new Set();
+    let yes = 0, total = 0;
     data.forEach(r => {
-      const shop = getField(r, 'shop_name');
-      if (shop && isYes(r[col])) yesShops.add(shop);
+      const v = r[col] || '';
+      if (v) { total++; if (isYes(v)) yes++; }
     });
-    const yes = yesShops.size;
-    const pct = denom > 0 ? Math.round((yes / denom) * 100) : 0;
-    return { col, model: full, brand, label, pct, yes, total: denom };
+    const pct = total > 0 ? Math.round((yes / total) * 100) : 0;
+    return { col, model: full, brand, label, pct, yes, total };
   }).sort((a, b) => b.pct - a.pct);
 }
 
@@ -167,15 +155,11 @@ export function buildPriceTableEntries(data) {
 export function getModelDetail(data, existsCol) {
   if (!existsCol || !data.length) return null;
 
-  const allShops = new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean));
-  const denom = allShops.size || data.length;
-  const yesShops = new Set();
+  let yes = 0, total = 0;
   data.forEach(r => {
-    const shop = getField(r, 'shop_name');
-    if (shop && isYes(r[existsCol])) yesShops.add(shop);
+    const v = r[existsCol] || '';
+    if (v) { total++; if (isYes(v)) yes++; }
   });
-  const yes = yesShops.size;
-  const total = denom;
 
   const compDefs = MODEL_COMP_MAP[existsCol] || [];
 

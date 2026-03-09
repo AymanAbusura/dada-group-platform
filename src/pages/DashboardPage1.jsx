@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchReports, flattenRecord } from '../utils/supabase.js';
+import { FORM_SECTIONS } from '../utils/formData.js';
 import {
   computeKPIs, buildCompFreq, buildAvailList,
   buildAreaCounts, buildRepCounts, buildPriceTableEntries,
   getModelDetail, getModelCols, getUnique,
-  getField, isYes
+  getField, isYes, buildCompPrices
 } from '../utils/dataUtils.js';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -87,28 +88,14 @@ function buildMarketShareData(data) {
 
 function buildMissingShops(data, existsCol) {
   if (!existsCol) return [];
-
-  // Group all records by shop
-  const shopMap = {};
-  data.forEach(r => {
-    const shop = getField(r, 'shop_name');
-    if (!shop) return;
-    if (!shopMap[shop]) {
-      shopMap[shop] = {
-        shop,
-        area: getField(r, 'area') || '—',
-        rep: getField(r, 'rep_name') || '—',
-        hasYes: false,
-        hasNo: false,
-      };
-    }
+  return data.filter(r => {
     const v = r[existsCol] || '';
-    if (isYes(v)) shopMap[shop].hasYes = true;
-    else if (v) shopMap[shop].hasNo = true;
-  });
-
-  // A shop is "missing" if it was visited but product was never confirmed as available
-  return Object.values(shopMap).filter(s => !s.hasYes);
+    return v && !isYes(v);
+  }).map(r => ({
+    shop: getField(r, 'shop_name') || '—',
+    area: getField(r, 'area') || '—',
+    rep: getField(r, 'rep_name') || '—',
+  }));
 }
 
 function buildNotesList(data) {
@@ -304,7 +291,7 @@ function AvailSection({ data }) {
                 ? <div style={{ padding: 20, textAlign: 'center', color: C.green }}>✅ المنتج متوفر في جميع المحلات المزارة</div>
                 : (
                   <table className="miss-table">
-                    <thead><tr><th>#</th><th>اسم المعرض</th><th>المنطقة</th><th>المندوب</th><th>الحالة</th><th>الفرصة</th></tr></thead>
+                    <thead><tr><th>#</th><th>اسم المعرض</th><th>المنطقة</th><th>المندوب</th><th>الفرصة</th></tr></thead>
                     <tbody>
                       {missingShops.map((s, i) => (
                         <tr key={i}>
@@ -312,12 +299,6 @@ function AvailSection({ data }) {
                           <td style={{ fontWeight: 600 }}>{s.shop}</td>
                           <td style={{ color: C.muted }}>{s.area}</td>
                           <td>{s.rep}</td>
-                          <td>
-                            {s.hasNo
-                              ? <span style={{ color: C.red, fontSize: 11, fontWeight: 700 }}>❌ غير متوفر</span>
-                              : <span style={{ color: C.muted, fontSize: 11 }}>⬜ لم يُرصد</span>
-                            }
-                          </td>
                           <td><span className="opp-badge">🎯 فرصة بيع</span></td>
                         </tr>
                       ))}
