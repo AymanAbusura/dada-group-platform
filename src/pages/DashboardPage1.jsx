@@ -88,51 +88,16 @@ function buildMarketShareData(data) {
     .sort((a, b) => b.count - a.count).slice(0, 12);
 }
 
-function buildMissingShops(data, selectedModel) {
-  if (!selectedModel) return [];
-  
-  const allShops = [...new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean))];
-  
-  return allShops.map(shop => {
-    const shopReports = data.filter(r => getField(r, 'shop_name') === shop);
-    
-    const exists = shopReports.some(r => isYes(r[selectedModel]));
-    
-    if (!exists) {
-      const latestReport = shopReports.sort((a, b) => 
-        new Date(b.created_at || 0) - new Date(a.created_at || 0)
-      )[0];
-      
-      return {
-        shop,
-        area: getField(latestReport, 'area') || '—',
-        rep: getField(latestReport, 'rep_name') || '—',
-        missingProducts: [selectedModel.replace('_exists', '')]
-      };
-    }
-    return null;
-  }).filter(Boolean);
-}
-
-function buildShopMissingProducts(data, selectedShop) {
-  if (!selectedShop) return [];
-  
-  const modelCols = getModelCols(data);
-  
-  const shopReports = data.filter(r => getField(r, 'shop_name') === selectedShop);
-  
-  return modelCols
-    .map(col => {
-      const exists = shopReports.some(r => isYes(r[col]));
-      if (!exists) {
-        return {
-          product: col.replace('_exists', ''),
-          col: col
-        };
-      }
-      return null;
-    })
-    .filter(Boolean);
+function buildMissingShops(data, existsCol) {
+  if (!existsCol) return [];
+  return data.filter(r => {
+    const v = r[existsCol] || '';
+    return v && !isYes(v);
+  }).map(r => ({
+    shop: getField(r, 'shop_name') || '—',
+    area: getField(r, 'area') || '—',
+    rep: getField(r, 'rep_name') || '—',
+  }));
 }
 
 function buildNotesList(data) {
@@ -291,22 +256,42 @@ function OverviewSection({ data, kpis }) {
 
 function AvailSection({ data }) {
   const [selModel, setSelModel] = useState('');
-  const [selShop, setSelShop] = useState('');
-  const [viewMode, setViewMode] = useState('byProduct');
-  
   const availList = useMemo(() => buildAvailList(data), [data]);
   const modelCols = useMemo(() => getModelCols(data), [data]);
-  const allShops = useMemo(() => {
-    return [...new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean))].sort();
-  }, [data]);
-  
-  const missingShopsByProduct = useMemo(() => 
-    buildMissingShops(data, selModel), [data, selModel]
-  );
-  
-  const missingProductsByShop = useMemo(() => 
-    buildShopMissingProducts(data, selShop), [data, selShop]
-  );
+//   const missingShops = useMemo(() => buildMissingShops(data, selModel), [data, selModel]);
+
+    const shopList = useMemo(() => {
+        const shops = [...new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean))].sort();
+        return shops;
+    }, [data]);
+    const missingModels = useMemo(() => {
+    if (!selShop) return [];
+    const shopRecords = data.filter(r => getField(r, 'shop_name') === selShop);
+    if (!shopRecords.length) return [];
+
+    const missing = [];
+    modelCols.forEach(col => {
+      shopRecords.forEach(r => {
+        if (r[col] !== undefined && r[col] !== null && r[col] !== '') {
+          if (!isYes(r[col])) {
+            const shopArea = getField(r, 'area') || '—';
+            const shopRep  = getField(r, 'rep_name') || '—';
+            // avoid duplicates
+            if (!missing.find(m => m.col === col)) {
+              missing.push({
+                col,
+                model: col.replace('_exists', ''),
+                area: shopArea,
+                rep: shopRep,
+              });
+            }
+          }
+        }
+      });
+    });
+    return missing;
+  }, [data, selShop, modelCols]);
+    
 
   const bekoItems = availList.filter(i => (i.brand || '').toLowerCase() === 'beko');
   const aristonItems = availList.filter(i => (i.brand || '').toLowerCase() === 'ariston');
@@ -334,7 +319,7 @@ function AvailSection({ data }) {
 
   return (
     <>
-      <div className="kpi-grid" style={{ marginBottom: 14 }}>
+    <div className="kpi-grid" style={{ marginBottom: 14 }}>
         {availList.slice(0, 5).map((item, i) => (
           <div key={item.col} className="kpi-card" style={{ '--accent': pctColor(item.pct), animationDelay: `${i * 60}ms` }}>
             <div className="kpi-icon">{(item.brand || '').toLowerCase() === 'ariston' ? '🔵' : '🟡'}</div>
@@ -371,149 +356,101 @@ function AvailSection({ data }) {
         </div>
       </div>
 
-      <div className="db-card grid-1">
+      {/* <div className="db-card grid-1">
         <div className="db-card-header">
           <div className="db-card-icon">🎯</div>
           <div>
-            <div className="db-card-title">فرص إعادة البيع</div>
+            <div className="db-card-title">نقاط البيع الفائتة — فرص إعادة البيع</div>
             <div className="db-card-sub">المحلات التي لا يتوفر فيها المنتج = فرصة بيع محتملة</div>
           </div>
         </div>
-        
         <div className="db-card-body">
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-            <button 
-              className={`view-mode-btn ${viewMode === 'byProduct' ? 'active' : ''}`}
-              onClick={() => setViewMode('byProduct')}
-              style={{
-                padding: '8px 16px',
-                background: viewMode === 'byProduct' ? C.gold : 'transparent',
-                border: `1px solid ${viewMode === 'byProduct' ? C.gold : C.border}`,
-                color: viewMode === 'byProduct' ? C.navy : '#fff',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 600
-              }}
-            >
-              عرض حسب المنتج
-            </button>
-            <button 
-              className={`view-mode-btn ${viewMode === 'byShop' ? 'active' : ''}`}
-              onClick={() => setViewMode('byShop')}
-              style={{
-                padding: '8px 16px',
-                background: viewMode === 'byShop' ? C.gold : 'transparent',
-                border: `1px solid ${viewMode === 'byShop' ? C.gold : C.border}`,
-                color: viewMode === 'byShop' ? C.navy : '#fff',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 600
-              }}
-            >
-              عرض حسب المعرض
-            </button>
-          </div>
-
-          {viewMode === 'byProduct' ? (
-            <>
-              <select className="model-sel" value={selModel} onChange={e => setSelModel(e.target.value)}>
-                <option value="">-- اختر موديل لعرض المحلات الفائتة --</option>
-                {modelCols.map(col => (
-                  <option key={col} value={col}>
-                    {col.replace('_exists', '')}
-                  </option>
-                ))}
-              </select>
-              
-              {selModel && (
-                <div className="table-scroll">
-                  {missingShopsByProduct.length === 0 ? (
-                    <div style={{ padding: 20, textAlign: 'center', color: C.green }}>
-                      ✅ المنتج متوفر في جميع المحلات المزارة
-                    </div>
-                  ) : (
-                    <table className="miss-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>اسم المعرض</th>
-                          <th>المنطقة</th>
-                          <th>المندوب</th>
-                          <th>المنتج المفقود</th>
+          <select className="model-sel" value={selModel} onChange={e => setSelModel(e.target.value)}>
+            <option value="">-- اختر موديل لعرض المحلات الفائتة --</option>
+            {modelCols.map(col => <option key={col} value={col}>{col.replace('_exists', '')}</option>)}
+          </select>
+          {selModel && (
+            <div className="table-scroll">
+              {missingShops.length === 0
+                ? <div style={{ padding: 20, textAlign: 'center', color: C.green }}>✅ المنتج متوفر في جميع المحلات المزارة</div>
+                : (
+                  <table className="miss-table">
+                    <thead><tr><th>#</th><th>اسم المعرض</th><th>المنطقة</th><th>المندوب</th><th>الفرصة</th></tr></thead>
+                    <tbody>
+                      {missingShops.map((s, i) => (
+                        <tr key={i}>
+                          <td style={{ color: C.muted }}>{i + 1}</td>
+                          <td style={{ fontWeight: 600 }}>{s.shop}</td>
+                          <td style={{ color: C.muted }}>{s.area}</td>
+                          <td>{s.rep}</td>
+                          <td><span className="opp-badge">🎯 فرصة بيع</span></td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {missingShopsByProduct.map((s, i) => (
-                          <tr key={i}>
-                            <td style={{ color: C.muted }}>{i + 1}</td>
-                            <td style={{ fontWeight: 600 }}>{s.shop}</td>
-                            <td style={{ color: C.muted }}>{s.area}</td>
-                            <td>{s.rep}</td>
-                            <td>
-                              <span className="opp-badge" style={{ background: 'rgba(201,168,76,0.15)', color: C.gold }}>
-                                🎯 {s.missingProducts[0]}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <select className="model-sel" value={selShop} onChange={e => setSelShop(e.target.value)}>
-                <option value="">-- اختر معرض لعرض المنتجات المفقودة --</option>
-                {allShops.map(shop => (
-                  <option key={shop} value={shop}>{shop}</option>
-                ))}
-              </select>
-              
-              {selShop && (
-                <div>
-                  <h4 style={{ color: C.gold, margin: '12px 0 8px', fontSize: '14px' }}>
-                    المنتجات المفقودة في {selShop}:
-                  </h4>
-                  {missingProductsByShop.length === 0 ? (
-                    <div style={{ padding: 16, background: 'rgba(29,179,124,0.1)', borderRadius: 8, textAlign: 'center' }}>
-                      <span style={{ color: C.green }}>✅ جميع منتجاتنا متوفرة في هذا المعرض</span>
-                    </div>
-                  ) : (
-                    <div className="table-scroll">
-                      <table className="miss-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>المنتج المفقود</th>
-                            <th>الفرصة</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {missingProductsByShop.map((item, i) => (
-                            <tr key={i}>
-                              <td style={{ color: C.muted }}>{i + 1}</td>
-                              <td style={{ fontWeight: 600 }}>{item.product}</td>
-                              <td>
-                                <span className="opp-badge">
-                                  🎯 فرصة بيع
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+            </div>
           )}
         </div>
+      </div> */}
+      <div className="db-card grid-1">
+  <div className="db-card-header">
+    <div className="db-card-icon">🎯</div>
+    <div>
+      <div className="db-card-title">نقاط البيع الفائتة — فرص إعادة البيع</div>
+      <div className="db-card-sub">اختر معرض لعرض الموديلات الغائبة = فرص بيع محتملة</div>
+    </div>
+  </div>
+  <div className="db-card-body">
+    <select className="model-sel" value={selShop} onChange={e => setSelShop(e.target.value)}>
+      <option value="">-- اختر معرض --</option>
+      {shopList.map(shop => (
+        <option key={shop} value={shop}>{shop}</option>
+      ))}
+    </select>
+
+    {selShop && (
+      <div className="table-scroll">
+        {missingModels.length === 0
+          ? (
+            <div style={{ padding: 20, textAlign: 'center', color: C.green }}>
+              ✅ جميع الموديلات متوفرة في هذا المعرض
+            </div>
+          )
+          : (
+            <>
+              <div style={{ padding: '8px 4px 12px', color: C.gold, fontSize: 13 }}>
+                🎯 {missingModels.length} موديل غير متوفر في <strong>{selShop}</strong>
+              </div>
+              <table className="miss-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>الموديل المفقود</th>
+                    <th>المنطقة</th>
+                    <th>المندوب</th>
+                    <th>الفرصة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {missingModels.map((m, i) => (
+                    <tr key={m.col}>
+                      <td style={{ color: C.muted }}>{i + 1}</td>
+                      <td style={{ fontWeight: 600, color: '#fff' }}>{m.model}</td>
+                      <td style={{ color: C.muted }}>{m.area}</td>
+                      <td>{m.rep}</td>
+                      <td><span className="opp-badge">🎯 فرصة بيع</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )
+        }
       </div>
+    )}
+  </div>
+</div>
     </>
   );
 }
