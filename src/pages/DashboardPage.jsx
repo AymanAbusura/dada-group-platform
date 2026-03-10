@@ -1068,7 +1068,7 @@ export default function DashboardPage({ onBack }) {
         {!loading && !error && rawData.length === 0 && (
           <div className="db-center">
             <div style={{ fontSize: 48 }}>📭</div>
-            <div style={{ fontSize: 18, fontWeight: 700, Color: C.muted }}>لا توجد تقارير بعد</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>لا توجد تقارير بعد</div>
             <div style={{ fontSize: 13, color: C.muted }}>أرسل رابط الفورم للمندوبين لبدء جمع بيانات السوق</div>
           </div>
         )}
