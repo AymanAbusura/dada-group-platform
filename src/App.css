@@ -2127,6 +2127,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 }
 .db-card-body {
 	padding: 16px 18px;
+  scrollbar-width: none;
 }
 .grid-2 {
 	display: grid;
@@ -2209,6 +2210,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 	overflow-x: auto;
 	max-height: 440px;
 	overflow-y: auto;
+  scrollbar-width: none;
 }
 .table-scroll::-webkit-scrollbar {
 	width: 4px;
