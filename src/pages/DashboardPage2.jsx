@@ -183,10 +183,10 @@ function buildCompFreqByCat(data, catId) {
   return freq;
 }
 
-function OverviewSection({ data, kpis }) {
+function OverviewSection({ data, kpis, allData }) {
   const [selCat, setSelCat] = useState('');
   const compFreq = useMemo(() => buildCompFreqByCat(data, selCat), [data, selCat]);
-  const availList = useMemo(() => buildAvailList(data), [data]);
+  const availList = useMemo(() => buildAvailList(data, allData), [data, allData]);
   const topComps = Object.entries(compFreq).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxComp = topComps[0]?.[1] || 1;
 
@@ -289,12 +289,12 @@ function OverviewSection({ data, kpis }) {
   );
 }
 
-function AvailSection({ data }) {
+function AvailSection({ data, allData }) {
   const [selModel, setSelModel] = useState('');
   const [selShop, setSelShop] = useState('');
   const [viewMode, setViewMode] = useState('byProduct');
   
-  const availList = useMemo(() => buildAvailList(data), [data]);
+  const availList = useMemo(() => buildAvailList(data, allData), [data, allData]);
   const modelCols = useMemo(() => getModelCols(data), [data]);
   const allShops = useMemo(() => {
     return [...new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean))].sort();
@@ -518,11 +518,11 @@ function AvailSection({ data }) {
   );
 }
 
-function PricesSection({ data }) {
+function PricesSection({ data, allData }) {
   const [selModel, setSelModel] = useState('');
   const priceEntries = useMemo(() => buildPriceTableEntries(data), [data]);
   const modelCols = useMemo(() => getModelCols(data), [data]);
-  const modelDetail = useMemo(() => selModel ? getModelDetail(data, selModel) : null, [data, selModel]);
+  const modelDetail = useMemo(() => selModel ? getModelDetail(data, selModel, allData) : null, [data, selModel, allData]);
 
   const chartData = useMemo(() => {
     if (!modelDetail?.competitors?.length) return null;
@@ -653,10 +653,10 @@ function PricesSection({ data }) {
   );
 }
 
-function MarketSection({ data }) {
+function MarketSection({ data, allData }) {
   const compFreq = useMemo(() => buildCompFreq(data), [data]);
   const marketShare = useMemo(() => buildMarketShareData(data), [data]);
-  const availList = useMemo(() => buildAvailList(data), [data]);
+  const availList = useMemo(() => buildAvailList(data, allData), [data, allData]);
 
   const ourBrands = availList.reduce((acc, item) => {
     const b = (item.brand || '').toLowerCase();
@@ -982,7 +982,7 @@ export default function DashboardPage({ onBack }) {
     return true;
   }), [rawData, filters]);
 
-  const kpis = useMemo(() => computeKPIs(filtered), [filtered]);
+  const kpis = useMemo(() => computeKPIs(filtered, rawData), [filtered, rawData]);
   const monthOpts = useMemo(() => getUnique(rawData, 'month', 'الشهر'), [rawData]);
   const areaOpts = useMemo(() => getUnique(rawData, 'area', 'المنطقة'), [rawData]);
   const repOpts = useMemo(() => getUnique(rawData, 'rep_name', 'اسم المندوب'), [rawData]);
@@ -1068,7 +1068,7 @@ export default function DashboardPage({ onBack }) {
         {!loading && !error && rawData.length === 0 && (
           <div className="db-center">
             <div style={{ fontSize: 48 }}>📭</div>
-            <div style={{ fontSize: 18, fontWeight: 700, Color: C.muted }}>لا توجد تقارير بعد</div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>لا توجد تقارير بعد</div>
             <div style={{ fontSize: 13, color: C.muted }}>أرسل رابط الفورم للمندوبين لبدء جمع بيانات السوق</div>
           </div>
         )}
@@ -1082,10 +1082,10 @@ export default function DashboardPage({ onBack }) {
 
         {!loading && !error && filtered.length > 0 && (
           <>
-            {activeTab === 'overview' && <OverviewSection data={filtered} kpis={kpis} />}
-            {activeTab === 'availability' && <AvailSection data={filtered} />}
-            {activeTab === 'prices' && <PricesSection data={filtered} />}
-            {activeTab === 'market' && <MarketSection data={filtered} />}
+            {activeTab === 'overview' && <OverviewSection data={filtered} kpis={kpis} allData={rawData} />}
+            {activeTab === 'availability' && <AvailSection data={filtered} allData={rawData} />}
+            {activeTab === 'prices' && <PricesSection data={filtered} allData={rawData} />}
+            {activeTab === 'market' && <MarketSection data={filtered} allData={rawData} />}
             {activeTab === 'staff' && <StaffSection data={filtered} />}
             {activeTab === 'notes' && (
               <div className="db-card grid-1">
