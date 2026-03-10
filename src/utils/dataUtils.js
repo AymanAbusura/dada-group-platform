@@ -4,10 +4,15 @@ function buildModelCompMap() {
   const map = {};
   FORM_SECTIONS.forEach(section => {
     section.products.forEach(product => {
-      map[product.existsName] = product.competitors.map(comp => ({
-        compLabel: `${comp.brand} ${comp.model.trim().replace(/\s+/g, ' ')}`,
-        priceKey:  comp.priceName,
-      }));
+      const cleanModel  = product.model.trim().replace(/\s+/g, ' ');
+      const existsKey   = `${product.brand} ${cleanModel}_exists`;
+      map[existsKey] = product.competitors.map(comp => {
+        const cleanComp = comp.model.trim().replace(/\s+/g, ' ');
+        return {
+          compLabel: `${comp.brand} ${cleanComp}`,
+          priceKey:  `${comp.brand} ${cleanComp}_price`,
+        };
+      });
     });
   });
   return map;
@@ -36,7 +41,7 @@ export function getModelCols(rows) {
 export function getPriceCols(rows) {
   if (!rows.length) return [];
   const keys = new Set();
-  rows.forEach(r => Object.keys(r).forEach(k => { if (k.endsWith('_price')) keys.add(k); }));
+  rows.forEach(r => Object.keys(r).forEach(k => { if (/_price\d*$/.test(k)) keys.add(k); }));
   return [...keys];
 }
 
@@ -53,6 +58,7 @@ export function computeKPIs(data) {
   const reps      = new Set(data.map(r => getField(r, 'rep_name')));
   const modelCols = getModelCols(data);
 
+  // Use unique shops as denominator per model col (same logic as buildAvailList)
   const allShops = new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean));
   const shopDenom = allShops.size || data.length;
   let yes = 0, total = 0;
@@ -82,7 +88,7 @@ export function computeKPIs(data) {
 export function buildCompFreq(data) {
   const freq = {};
   getPriceCols(data).forEach(col => {
-    const label = col.replace(/_price$/, '');
+    const label = col.replace(/_price\d*$/, '');
     data.forEach(r => {
       const v = parseFloat(r[col]);
       if (!isNaN(v) && v > 0) freq[label] = (freq[label] || 0) + 1;
@@ -94,7 +100,7 @@ export function buildCompFreq(data) {
 export function buildCompPrices(data) {
   const prices = {};
   getPriceCols(data).forEach(col => {
-    const label = col.replace(/_price$/, '');
+    const label = col.replace(/_price\d*$/, '');
     data.forEach(r => {
       const v = parseFloat(r[col]);
       if (!isNaN(v) && v > 0) {
@@ -107,25 +113,17 @@ export function buildCompPrices(data) {
 }
 
 export function buildAvailList(data) {
+  // Denominator = total unique shops visited (the real market universe)
   const allShops = new Set(data.map(r => getField(r, 'shop_name')).filter(Boolean));
   const denom = allShops.size || data.length;
 
-  // Build a lookup: existsName -> { brand, label }
-  const existsMeta = {};
-  FORM_SECTIONS.forEach(section => {
-    section.products.forEach(product => {
-      existsMeta[product.existsName] = {
-        brand: product.brand,
-        label: `${product.brand} ${product.model.trim().replace(/\s+/g, ' ')}`,
-      };
-    });
-  });
-
   return getModelCols(data).map(col => {
-    const meta  = existsMeta[col] || {};
-    const brand = meta.brand || col.split('_')[0];
-    const label = meta.label || col.replace('_exists', '');
+    const full  = col.replace('_exists', '');
+    const parts = full.split(' ');
+    const brand = parts[0];
+    const label = parts.slice(1).join(' ') || full;
 
+    // Count unique shops where this product was explicitly confirmed present
     const yesShops = new Set();
     data.forEach(r => {
       const shop = getField(r, 'shop_name');
@@ -133,7 +131,7 @@ export function buildAvailList(data) {
     });
     const yes = yesShops.size;
     const pct = denom > 0 ? Math.round((yes / denom) * 100) : 0;
-    return { col, model: col.replace('_exists', ''), brand, label, pct, yes, total: denom };
+    return { col, model: full, brand, label, pct, yes, total: denom };
   }).sort((a, b) => b.pct - a.pct);
 }
 
@@ -150,29 +148,13 @@ export function buildRepCounts(data) {
 }
 
 export function buildPriceTableEntries(data) {
-  // Build reverse lookup: priceName key -> { brand, model }
-  const priceMeta = {};
-  FORM_SECTIONS.forEach(section => {
-    section.products.forEach(product => {
-      product.competitors.forEach(comp => {
-        if (!priceMeta[comp.priceName]) {
-          priceMeta[comp.priceName] = {
-            brand: comp.brand,
-            model: comp.model.trim().replace(/\s+/g, ' '),
-          };
-        }
-      });
-    });
-  });
-
   return Object.entries(buildCompPrices(data))
     .map(([label, arr]) => {
-      const priceKey = label + '_price';
-      const meta = priceMeta[priceKey] || {};
+      const parts = label.split(' ');
       return {
         label,
-        brand: meta.brand || label.split('_')[0],
-        model: meta.model || label,
+        brand: parts[0],
+        model: parts.slice(1).join(' '),
         avg:   Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
         min:   Math.min(...arr),
         max:   Math.max(...arr),
@@ -198,10 +180,16 @@ export function getModelDetail(data, existsCol) {
   const compDefs = MODEL_COMP_MAP[existsCol] || [];
 
   const competitors = compDefs.map(({ compLabel, priceKey }) => {
+    const allPriceCols = Object.keys(data[0] || {}).filter(k =>
+      k === priceKey || k.startsWith(priceKey.replace(/_price$/, '_price'))
+    );
+
     const arr = [];
-    data.forEach(r => {
-      const v = parseFloat(r[priceKey]);
-      if (!isNaN(v) && v > 0) arr.push(v);
+    allPriceCols.forEach(col => {
+      data.forEach(r => {
+        const v = parseFloat(r[col]);
+        if (!isNaN(v) && v > 0) arr.push(v);
+      });
     });
 
     if (!arr.length) return null;
