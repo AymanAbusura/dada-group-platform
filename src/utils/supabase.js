@@ -1,8 +1,7 @@
 import { FORM_SECTIONS } from './formData.js';
 
-export const SUPABASE_URL = 'https://nyyiqguedbvwiskrysba.supabase.co';
-export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWlxZ3VlZGJ2d2lza3J5c2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTM1NzAsImV4cCI6MjA4ODE4OTU3MH0.PlnZINW8M90eY0_BV8QxMspGb8yC2tAOw-oeVTSQqMU';
-
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 const HEADERS = {
   'apikey': SUPABASE_URL ? SUPABASE_KEY : '',
   'Authorization': `Bearer ${SUPABASE_KEY}`,
