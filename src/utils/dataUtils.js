@@ -122,7 +122,10 @@ export function buildAvailList(data) {
 
   return getModelCols(data).map(col => {
     const meta  = existsMeta[col] || {};
-    const brand = meta.brand || col.split('_')[0];
+    // const brand = meta.brand || col.split('_')[0];
+    // const label = meta.label || col.replace('_exists', '');
+
+    const brand = meta.brand || col.split(' ')[0];
     const label = meta.label || col.replace('_exists', '');
 
     const yesShops = new Set();

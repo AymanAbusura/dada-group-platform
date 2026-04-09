@@ -338,7 +338,7 @@ function AvailSection({ data }) {
             <div className="db-card-icon">🟡</div>
             <div>
               <div className="db-card-title">توافر منتجات beko</div>
-              <div className="db-card-sub">المعادلة: محلات تحتوي المنتج ÷ إجمالي المحلات × 100</div>
+              <div className="db-card-sub">نسبة الحضور في المحلات المزارة</div>
             </div>
           </div>
           <div className="db-card-body" style={{ maxHeight: 360, overflowY: 'auto' }}>
