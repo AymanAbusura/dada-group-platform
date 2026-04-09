@@ -727,8 +727,6 @@ function MarketSection({ data }) {
     <>
       <div className="kpi-grid">
         {[
-          { icon: '🟡', val: `${bekoShare}%`, lbl: 'حصة beko بالتوافر', accent: C.gold, color: pctColor(bekoShare) },
-          { icon: '🔵', val: `${aristonShare}%`, lbl: 'حصة Ariston بالتوافر', accent: C.blue, color: pctColor(aristonShare) },
           { icon: '🏆', val: sortedComp[0]?.[0]?.split(' ')[0] || '—', lbl: 'أكثر منافس حضوراً', accent: C.orange },
           { icon: '📊', val: Object.keys(compFreq).length, lbl: 'منافس مرصود', accent: C.purple },
         ].map((k, i) => (
