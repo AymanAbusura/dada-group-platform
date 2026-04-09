@@ -1972,6 +1972,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 	font-size: 12px;
 	display: flex;
 	align-items: center;
+  justify-content: center;
 	gap: 5px;
 	transition: .2s;
 }
