@@ -1219,6 +1219,18 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
   padding-left: 8px;
 }
 
+.brand-pill.bk {
+  background: rgba(201, 168, 76, 0.15);
+  color: #e0be6e;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+}
+
+.brand-pill.ar {
+  background: rgba(29, 179, 124, 0.15);
+  color: #1db37c;
+  border: 1px solid rgba(29, 179, 124, 0.3);
+}
+
 /* ══════════════════ FORM PAGE ══════════════════ */
 .form-info-bar {
   background: var(--white);

@@ -46,7 +46,6 @@ function pctColor(p) {
   return C.red;
 }
 
-
 function EmptyState({ text }) {
   return (
     <div style={{ padding: '36px 16px', textAlign: 'center', color: C.muted }}>
@@ -57,8 +56,9 @@ function EmptyState({ text }) {
 }
 
 function BrandPill({ brand }) {
-  const b = (brand || '').toLowerCase();
-  return <span className={`brand-pill${b === 'ariston' ? ' ar' : ''}`}>{brand}</span>;
+  const fullBrand = (brand || '');
+  const brandName = fullBrand.split(' ')[0];
+  return <span className={`brand-pill${brandName === 'ariston' ? ' ar' : ''}`}>{brandName === 'ariston' ? 'Ariston' : brandName === 'beko' ? 'beko' : brandName}</span>;
 }
 
 function buildMarketShareData(data) {
@@ -235,19 +235,7 @@ function OverviewSection({ data, kpis }) {
         ))}
       </div>
 
-      <div className="grid-2">
-        <div className="db-card">
-          <div className="db-card-header">
-            <div className="db-card-icon">📈</div>
-            <div>
-              <div className="db-card-title">منحنى توافر المنتجات</div>
-              <div className="db-card-sub">نسبة حضور أبرز الموديلات في السوق</div>
-            </div>
-          </div>
-          <div className="db-card-body">
-            <div className="chart-wrap"><Line data={lineData} options={lineOpts} /></div>
-          </div>
-        </div>
+      <div className="grid-1">
         <div className="db-card">
           <div className="db-card-header">
             <div className="db-card-icon">🏆</div>
@@ -520,9 +508,30 @@ function AvailSection({ data }) {
 
 function PricesSection({ data }) {
   const [selModel, setSelModel] = useState('');
+  const [selCat, setSelCat] = useState('');
+  
   const priceEntries = useMemo(() => buildPriceTableEntries(data), [data]);
   const modelCols = useMemo(() => getModelCols(data), [data]);
   const modelDetail = useMemo(() => selModel ? getModelDetail(data, selModel) : null, [data, selModel]);
+
+  const filteredPriceEntries = useMemo(() => {
+    if (!selCat) return priceEntries;
+    
+    const catIndex = parseInt(selCat.replace('cat', ''));
+    const selectedSection = FORM_SECTIONS[catIndex];
+    
+    if (!selectedSection) return priceEntries;
+    
+    const allowedCompetitors = new Set();
+    selectedSection.products.forEach(product => {
+      product.competitors.forEach(comp => {
+        const compIdentifier = `${comp.brand} ${comp.model.trim().replace(/\s+/g, ' ')}`;
+        allowedCompetitors.add(compIdentifier);
+      });
+    });
+    
+    return priceEntries.filter(entry => allowedCompetitors.has(entry.label));
+  }, [priceEntries, selCat]);
 
   const chartData = useMemo(() => {
     if (!modelDetail?.competitors?.length) return null;
@@ -557,6 +566,10 @@ function PricesSection({ data }) {
   };
   const rec = getRec();
 
+  console.log('Selected category:', selCat);
+  console.log('Filtered entries count:', filteredPriceEntries.length);
+  console.log('Price entries sample:', priceEntries.slice(0, 3).map(e => e.label));
+
   return (
     <>
       <div className="db-card" style={{ marginBottom: 14 }}>
@@ -567,13 +580,28 @@ function PricesSection({ data }) {
             <div className="db-card-sub">مجمّع من جميع زيارات المندوبين — مرتب حسب عدد الرصدات</div>
           </div>
         </div>
+        
+        <div style={{ padding: '0 16px', marginTop: 16, marginBottom: 16,  }}>
+          <select
+            className="model-sel"
+            value={selCat}
+            onChange={e => setSelCat(e.target.value)}
+            style={{ marginBottom: 12 }}
+          >
+            <option value="">🗂️ جميع الفئات</option>
+            {CATEGORY_MAP.map(c => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+        
         <div className="table-scroll">
           <table className="price-table">
             <thead>
               <tr><th>#</th><th>الماركة</th><th>الموديل</th><th>متوسط</th><th>أدنى</th><th>أعلى</th><th>رصدات</th></tr>
             </thead>
             <tbody>
-              {priceEntries.length ? priceEntries.map((e, i) => (
+              {filteredPriceEntries.length ? filteredPriceEntries.map((e, i) => (
                 <tr key={e.label}>
                   <td><span className={`rank-n${i===0?' rank-1':i===1?' rank-2':i===2?' rank-3':''}`}>{i + 1}</span></td>
                   <td><BrandPill brand={e.brand} /></td>
@@ -583,7 +611,13 @@ function PricesSection({ data }) {
                   <td className="p-max">{e.max} JD</td>
                   <td style={{ color: C.muted }}>{e.count}</td>
                 </tr>
-              )) : <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: C.muted }}>لا توجد بيانات أسعار</td></tr>}
+              )) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 28, color: C.muted }}>
+                    {selCat ? 'لا توجد بيانات أسعار لهذه الفئة' : 'لا توجد بيانات أسعار'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
