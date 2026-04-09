@@ -2512,6 +2512,7 @@ button, input, select, textarea { font-family: 'Cairo', sans-serif; }
 .note-shop {
 	font-size: 13px;
 	font-weight: 700;
+  color: #fff;
 }
 .note-area {
 	font-size: 10px;
