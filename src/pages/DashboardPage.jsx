@@ -1091,9 +1091,9 @@ export default function DashboardPage({ onBack }) {
         )}
         {error && (
           <div className="db-center">
-            <div style={{ background: 'rgba(192,41,28,0.1)', border: '1px solid rgba(192,41,28,0.3)', borderRadius: 12, padding: '24px 28px', textAlign: 'center', maxWidth: 380 }}>
+            <div style={{ background: 'rgba(192,41,28,0.1)', border: '1px solid rgba(192,41,28,0.3)', borderRadius: 12, padding: '24px 28px', textAlign: 'center', maxWidth: 380, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>❌</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>فشل تحميل البيانات</div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: '#fff' }}>فشل تحميل البيانات</div>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 14 }}>{error}</div>
               <button className="db-refresh-btn" onClick={() => load(false)}>🔄 إعادة المحاولة</button>
             </div>
